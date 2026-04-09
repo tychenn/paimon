@@ -1,0 +1,27 @@
+{
+  "llm": {
+    "api_base": "https://open.bigmodel.cn/api/paas/v4/",
+    "api_key": "53a8d1a63abf444780e87e27f3509488.PmQZ0pxUHgSiPC2F",
+    "model": "glm-4.6v",
+    "temperature": 0.7,
+    "max_tokens": 1600,
+    "timeout_seconds": 90
+  },
+  "web_search": {
+    "enabled": true,
+    "provider": "tavily",
+    "api_key": "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",
+    "max_results": 5
+  },
+  "agent": {
+    "name": "Volition",
+    "user_name": "User",
+    "hunger_max": 100,
+    "hunger_penalty": 10,
+    "recovery_max": 30,
+    "warning_streak": 2,
+    "auto_start": true,
+    "auto_continue": true,
+    "notebook_limit": 8
+  }
+}
