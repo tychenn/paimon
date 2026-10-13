@@ -1,0 +1,48 @@
+# Local Python environments and tools
+.venv/
+.tools/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Local settings and credentials
+.env
+.env.*
+!.env.example
+config.json
+config.local.*
+configs/local.toml
+configs/*.local.*
+*.pem
+*.key
+
+# Experiences, screenshots, model weights and virtual machines
+runtime/
+data/
+artifacts/
+models/
+checkpoints/
+*.db
+*.db-*
+*.sqlite*
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.ckpt
+*.ipsw
+*.utm/
+*.pvm/
+*.dmg
+
+# Local OS/editor files
+.DS_Store
+.idea/
+*.log

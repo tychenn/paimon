@@ -1,0 +1,21 @@
+# Copy to configs/local.toml for local customization.
+# This template describes planned connections; the bootstrap does not connect to them.
+
+[runtime]
+state_dir = "runtime"
+
+[model]
+# A future local SSH tunnel can forward this address to the remote model server.
+base_url = "http://127.0.0.1:8000/v1"
+model_id = ""
+api_key_env = "VOLITION_MODEL_API_KEY"
+
+[desktop]
+# The desktop bridge will run inside the agent's own macOS VM.
+backend = "macos_vm"
+bridge_url = "http://127.0.0.1:8765"
+api_key_env = "VOLITION_DESKTOP_API_KEY"
+
+[learning]
+backend = "remote"
+enabled = false

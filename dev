@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+
+VOLITION_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+cd "$VOLITION_ROOT"
+
+if command -v uv >/dev/null 2>&1; then
+    exec uv "$@"
+elif [ -x "$VOLITION_ROOT/.tools/bin/uv" ]; then
+    exec "$VOLITION_ROOT/.tools/bin/uv" "$@"
+fi
+
+echo "Install uv first: https://docs.astral.sh/uv/getting-started/installation/" >&2
+exit 127
