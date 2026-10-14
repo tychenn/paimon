@@ -116,7 +116,6 @@ def test_native_adapter_rejects_stale_frame_and_app_switch():
 
 
 def test_http_bridge_requires_auth_and_matches_client_contract(tmp_path):
-    from http.server import HTTPServer
     from queue import Queue
     from threading import Thread
 
@@ -124,7 +123,7 @@ def test_http_bridge_requires_auth_and_matches_client_contract(tmp_path):
 
     from volition.config import DesktopConfig
     from volition.environment import MacOSBridge
-    from volition.guest import handler_for
+    from volition.guest import LoopbackHTTPServer, handler_for
 
     servers = Queue()
     adapter = Adapter()
@@ -132,7 +131,9 @@ def test_http_bridge_requires_auth_and_matches_client_contract(tmp_path):
     def serve():
         service = GuestService(adapter, tmp_path)
         try:
-            with HTTPServer(("127.0.0.1", 0), handler_for(service, "fake-test-token")) as server:
+            with LoopbackHTTPServer(
+                ("127.0.0.1", 0), handler_for(service, "fake-test-token")
+            ) as server:
                 servers.put(server)
                 server.serve_forever(poll_interval=0.01)
         finally:

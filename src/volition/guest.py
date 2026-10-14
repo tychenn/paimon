@@ -7,11 +7,21 @@ import json
 import sqlite3
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from socketserver import TCPServer
 
 from pydantic import Field
 
 from volition.contracts import Action, StrictModel, VolitionError
 from volition.runtime import runner_lock
+
+
+class LoopbackHTTPServer(HTTPServer):
+    def server_bind(self):
+        # HTTPServer normally reverse-resolves its address. A local guest bridge
+        # has no need for DNS, which can block startup on otherwise offline Macs.
+        TCPServer.server_bind(self)
+        self.server_name = "localhost"
+        self.server_port = self.server_address[1]
 
 
 class ActionRequest(StrictModel):
@@ -147,7 +157,9 @@ def main():
         with runner_lock(args.state_dir):
             service = GuestService(MacOSAdapter(args.environment_id), args.state_dir)
             try:
-                with HTTPServer(("127.0.0.1", args.port), handler_for(service, key)) as server:
+                with LoopbackHTTPServer(
+                    ("127.0.0.1", args.port), handler_for(service, key)
+                ) as server:
                     print(
                         json.dumps(
                             {
