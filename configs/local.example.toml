@@ -1,19 +1,30 @@
-# Copy to configs/local.toml for local customization.
-# This template describes planned connections; the bootstrap does not connect to them.
+# Copy to configs/local.toml. Relative paths are relative to THIS config file.
 
 [runtime]
-state_dir = "runtime"
+state_dir = "../runtime/live"
+tick_seconds = 3.0
+history_limit = 20
 
 [model]
-# A future local SSH tunnel can forward this address to the remote model server.
-base_url = "http://127.0.0.1:8000/v1"
-model_id = ""
+backend = "remote"
+# Local SSH tunnel to the remote model server.
+base_url = "http://127.0.0.1:18000/v1"
+model_id = "volition-base"
 api_key_env = "VOLITION_MODEL_API_KEY"
+api_key_file = "" # Optional local file; never commit it.
+timeout_seconds = 90.0
+retries = 1
+max_tokens = 2048
+# Qwen3.8 first integration profile; remove to use the server's default thinking mode.
+enable_thinking = false
 
 [desktop]
-# The desktop bridge will run inside the agent's own macOS VM.
-backend = "macos_vm"
-bridge_url = "http://127.0.0.1:8765"
+# workspace performs real note-file I/O, without controlling a desktop.
+backend = "workspace"
+workspace_dir = "../runtime/workspace"
+environment_id = "volition-workspace"
+# Use macos_vm only after the guest bridge is installed and verified.
+bridge_url = "http://127.0.0.1:18765"
 api_key_env = "VOLITION_DESKTOP_API_KEY"
 
 [learning]

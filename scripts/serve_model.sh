@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Run on the selected GPU node, inside the dedicated inference environment.
+set -euo pipefail
+: "${VOLITION_MODEL_DIR:?Set the pinned model snapshot directory}"
+: "${VOLITION_MODEL_KEY_FILE:?Set the private API key file}"
+: "${CUDA_VISIBLE_DEVICES:?Select the allocated GPUs explicitly}"
+export VLLM_API_KEY
+VLLM_API_KEY="$(cat "$VOLITION_MODEL_KEY_FILE")"
+test -n "$VLLM_API_KEY"
+exec python -m vllm.entrypoints.openai.api_server \
+  --model "$VOLITION_MODEL_DIR" \
+  --served-model-name volition-base \
+  --host "${VOLITION_BIND_HOST:-127.0.0.1}" --port "${VOLITION_PORT:-18000}" \
+  --tensor-parallel-size 2 --dtype bfloat16 \
+  --max-model-len 32768 --max-num-seqs 1 \
+  --gpu-memory-utilization 0.85 --enforce-eager \
+  --reasoning-parser qwen3 --no-enable-log-requests --no-enable-log-outputs
