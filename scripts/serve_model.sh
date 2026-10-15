@@ -7,6 +7,8 @@ set -euo pipefail
 export VLLM_API_KEY
 VLLM_API_KEY="$(cat "$PAIMON_MODEL_KEY_FILE")"
 test -n "$VLLM_API_KEY"
+# The native sampler avoids FlashInfer's extra CUDA compiler requirement.
+export VLLM_USE_FLASHINFER_SAMPLER="${VLLM_USE_FLASHINFER_SAMPLER:-0}"
 exec python -m vllm.entrypoints.openai.api_server \
   --model "$PAIMON_MODEL_DIR" \
   --served-model-name paimon-base \

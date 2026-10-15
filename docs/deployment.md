@@ -42,6 +42,8 @@ bash scripts/serve_model.sh
 
 脚本默认监听节点回环地址。推荐 SSH 转发到该节点的回环端口；如果从登录节点转发到计算节点的私网端口，需显式指定 `PAIMON_BIND_HOST` 为计算节点地址，继续保留 API 认证。
 
+脚本默认使用原生采样器（`VLLM_USE_FLASHINFER_SAMPLER=0`），避免 FlashInfer 在首次请求时依赖额外的 CUDA 编译工具。需要 FlashInfer 时，可在完整配置工具链后显式覆盖该变量。推理环境建议使用 uv 管理的独立 Python 3.12，避免继承其他 Conda 环境的系统库依赖。
+
 本地配置的 `model.base_url` 指向 SSH 隧道，例如 `http://127.0.0.1:18000/v1`，`model.model_id = "paimon-base"`。将本地认证文件路径填入 `api_key_file`。`doctor --connect` 检查服务列表和模型 ID，随后用 `step` 验证真正的推理调用。
 
 默认集成配置为 `enable_thinking = false`、最大输出 2048 token，便于先检查结构化决策链路。评估需要深度推理的行为时可启用 thinking，并增加输出预算与超时；此配置选择不代表对模型能力的评价。服务启用 `qwen3` reasoning parser，避免把 thinking 内容混入决策 JSON。
