@@ -10,8 +10,8 @@ from pathlib import Path
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(prog="volition", description=__doc__)
-    parser.add_argument("--version", action="version", version=version("volition"))
+    parser = argparse.ArgumentParser(prog="paimon", description=__doc__)
+    parser.add_argument("--version", action="version", version=version("paimon"))
     commands = parser.add_subparsers(dest="command", required=True)
     doctor = commands.add_parser("doctor", help="Check the local Python development environment.")
     doctor.add_argument("--config", type=Path, help="Optionally check a TOML file's syntax.")
@@ -37,7 +37,7 @@ def main() -> int:
         json.dumps(
             {
                 "stage": "development_bootstrap",
-                "version": version("volition"),
+                "version": version("paimon"),
                 "python": platform.python_version(),
                 "platform": platform.system(),
                 "architecture": platform.machine(),

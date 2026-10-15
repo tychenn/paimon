@@ -1,6 +1,6 @@
-# Volition
+# Paimon
 
-Volition 探索一个拥有独立桌面、持续状态、自主目标和学习能力的 Agent。
+Paimon 探索一个拥有独立桌面、持续状态、自主目标和学习能力的 Agent。
 
 **当前阶段：重新实现前的开发环境。** 旧代码和运行数据已从当前分支移除，历史提交保留。当前提供 Python 包、环境检查命令、配置模板和持续集成；桌面操作、模型调用、自主循环、记忆和参数训练将逐步实现。
 
@@ -9,18 +9,18 @@ Volition 探索一个拥有独立桌面、持续状态、自主目标和学习�
 使用 Python 3.12 和 [uv](https://docs.astral.sh/uv/getting-started/installation/)。
 
 ```sh
-git clone https://github.com/tychenn/volition.git
-cd volition
+git clone https://github.com/tychenn/paimon.git
+cd paimon
 uv python install 3.12
 uv sync --locked
-uv run volition doctor --config configs/local.example.toml
+uv run paimon doctor --config configs/local.example.toml
 ```
 
 仓库提供 `./dev` 作为 uv 入口：优先使用 PATH 中的 uv，也支持项目内 `.tools/bin/uv`。例如：
 
 ```sh
 ./dev sync --locked
-./dev run volition doctor
+./dev run paimon doctor
 ./dev run ruff check .
 ./dev run ruff format --check .
 ./dev build --no-sources
@@ -33,7 +33,7 @@ uv run volition doctor --config configs/local.example.toml
 | 位置 | 后续职责 |
 | --- | --- |
 | 本地 Mac 宿主 | 运行调度、用户交流、持续状态与经历记录 |
-| 本地 macOS 虚拟机 | Volition 自己的桌面、结构化界面观测与动作执行 |
+| 本地 macOS 虚拟机 | Paimon 自己的桌面、结构化界面观测与动作执行 |
 | 远程 GPU 服务器 | 模型推理、参数训练与版本产物 |
 
 本地核心包暂时只依赖 Python 标准库。GPU 推理与训练依赖会在接入时单独定义。

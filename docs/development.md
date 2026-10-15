@@ -12,7 +12,7 @@
 ## 目录
 
 ```text
-src/volition/           Python 包与开发检查命令
+src/paimon/           Python 包与开发检查命令
 configs/               可公开的配置示例
 docs/                  开发说明
 .github/workflows/     自动检查
@@ -38,7 +38,7 @@ runtime/               本地运行数据（后续创建，Git 忽略）
 ./dev run ruff check .
 ./dev run ruff format --check .
 ./dev run python -m compileall -q src
-./dev run volition doctor --config configs/local.example.toml
+./dev run paimon doctor --config configs/local.example.toml
 ./dev build --no-sources
 ```
 

@@ -1,5 +1,5 @@
 [project]
-name = "volition"
+name = "paimon"
 version = "0.1.0.dev0"
 description = "A foundation for a persistent, learning desktop agent."
 readme = "README.md"
@@ -7,14 +7,14 @@ requires-python = ">=3.12,<3.13"
 dependencies = []
 
 [project.scripts]
-volition = "volition.cli:main"
+paimon = "paimon.cli:main"
 
 [build-system]
 requires = ["hatchling==1.27.0"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/volition"]
+packages = ["src/paimon"]
 
 [dependency-groups]
 dev = ["ruff>=0.14,<1"]
