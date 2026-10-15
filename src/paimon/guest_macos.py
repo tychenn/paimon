@@ -7,15 +7,15 @@ import time
 from urllib.parse import urlsplit
 from uuid import uuid4
 
-from volition.contracts import Observation, VolitionError
+from paimon.contracts import Observation, PaimonError
 
 
 def require_virtual_mac():
     if platform.system() != "Darwin":
-        raise VolitionError("桥接服务需要在 macOS 虚拟机内运行。")
+        raise PaimonError("桥接服务需要在 macOS 虚拟机内运行。")
     model = subprocess.check_output(["/usr/sbin/sysctl", "-n", "hw.model"], text=True).strip()
     if not model.startswith("VirtualMac"):
-        raise VolitionError("检测到宿主或未验证的机型，拒绝访问桌面。")
+        raise PaimonError("检测到宿主或未验证的机型，拒绝访问桌面。")
 
 
 class MacOSAdapter:
@@ -27,7 +27,7 @@ class MacOSAdapter:
 
         self.AX, self.AppKit, self.NSURL = AX, AppKit, NSURL
         if not AX.AXIsProcessTrusted():
-            raise VolitionError("请先在虚拟机系统设置中为运行终端授予辅助功能权限。")
+            raise PaimonError("请先在虚拟机系统设置中为运行终端授予辅助功能权限。")
         self.environment_id = environment_id
         self.elements = {}
         self.snapshot_id = None
@@ -41,7 +41,7 @@ class MacOSAdapter:
     def observe(self):
         app = self.AppKit.NSWorkspace.sharedWorkspace().frontmostApplication()
         if app is None:
-            raise VolitionError("当前没有可访问的前台应用。")
+            raise PaimonError("当前没有可访问的前台应用。")
         pid = app.processIdentifier()
         root = self.AX.AXUIElementCreateApplication(pid)
         self.AX.AXUIElementSetMessagingTimeout(root, 1.0)
@@ -99,10 +99,10 @@ class MacOSAdapter:
 
     def validate(self, request):
         if request.observation_id != self.snapshot_id or time.monotonic() - self.observed_at > 180:
-            raise VolitionError("观察已过期，请重新观察。")
+            raise PaimonError("观察已过期，请重新观察。")
         app = self.AppKit.NSWorkspace.sharedWorkspace().frontmostApplication()
         if app is None or app.processIdentifier() != self.frontmost_pid:
-            raise VolitionError("前台应用已改变，请重新观察。")
+            raise PaimonError("前台应用已改变，请重新观察。")
         action = request.action
         if action.name == "open_url":
             url = urlsplit(action.target)
@@ -112,17 +112,17 @@ class MacOSAdapter:
                 or url.username
                 or url.password
             ):
-                raise VolitionError("仅支持不含认证信息的 HTTP(S) URL。")
+                raise PaimonError("仅支持不含认证信息的 HTTP(S) URL。")
             return
         if action.name not in {"click", "type_text"} or action.target not in self.elements:
-            raise VolitionError("动作或目标不在当前观察中。")
+            raise PaimonError("动作或目标不在当前观察中。")
         element, node = self.elements[action.target]
         if not self.attribute(element, "AXEnabled", False):
-            raise VolitionError("目标控件当前不可用。")
+            raise PaimonError("目标控件当前不可用。")
         if action.name == "click" and not node["pressable"]:
-            raise VolitionError("目标控件不支持 AXPress。")
+            raise PaimonError("目标控件不支持 AXPress。")
         if action.name == "type_text" and not node["editable"]:
-            raise VolitionError("目标控件不可编辑。")
+            raise PaimonError("目标控件不可编辑。")
 
     def execute(self, request):
         action = request.action
@@ -130,7 +130,7 @@ class MacOSAdapter:
         if action.name == "open_url":
             url = self.NSURL.URLWithString_(action.target)
             if url is None or not self.AppKit.NSWorkspace.sharedWorkspace().openURL_(url):
-                raise VolitionError("系统未接受打开 URL 的请求。")
+                raise PaimonError("系统未接受打开 URL 的请求。")
         else:
             element, _ = self.elements[action.target]
             if action.name == "click":
@@ -138,7 +138,7 @@ class MacOSAdapter:
             else:
                 error = self.AX.AXUIElementSetAttributeValue(element, "AXValue", action.text)
             if error != 0:
-                raise VolitionError(f"辅助功能动作失败（AXError {error}）；请重新观察确认结果。")
+                raise PaimonError(f"辅助功能动作失败（AXError {error}）；请重新观察确认结果。")
         return {
             "accepted_by_os": True,
             "verified_effect": False,

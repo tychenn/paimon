@@ -1,5 +1,5 @@
 [project]
-name = "volition"
+name = "paimon"
 version = "0.1.0.dev0"
 description = "A foundation for a persistent, learning desktop agent."
 readme = "README.md"
@@ -10,8 +10,8 @@ dependencies = [
 ]
 
 [project.scripts]
-volition = "volition.cli:main"
-volition-guest = "volition.guest:main"
+paimon = "paimon.cli:main"
+paimon-guest = "paimon.guest:main"
 
 [project.optional-dependencies]
 guest = [
@@ -24,7 +24,7 @@ requires = ["hatchling==1.27.0"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/volition"]
+packages = ["src/paimon"]
 
 [dependency-groups]
 dev = [

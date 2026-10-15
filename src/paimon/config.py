@@ -6,7 +6,7 @@ from urllib.parse import urlsplit
 
 from pydantic import Field, ValidationError, field_validator
 
-from volition.contracts import StrictModel, VolitionError
+from paimon.contracts import PaimonError, StrictModel
 
 
 class RuntimeConfig(StrictModel):
@@ -19,7 +19,7 @@ class ModelConfig(StrictModel):
     backend: str = "remote"
     base_url: str = "http://127.0.0.1:18000/v1"
     model_id: str = ""
-    api_key_env: str = "VOLITION_MODEL_API_KEY"
+    api_key_env: str = "PAIMON_MODEL_API_KEY"
     api_key_file: str = ""
     timeout_seconds: float = Field(default=90.0, gt=0, le=600)
     retries: int = Field(default=1, ge=0, le=3)
@@ -54,9 +54,9 @@ class ModelConfig(StrictModel):
 class DesktopConfig(StrictModel):
     backend: str = "workspace"
     workspace_dir: str = "../runtime/workspace"
-    environment_id: str = "volition-workspace"
+    environment_id: str = "paimon-workspace"
     bridge_url: str = "http://127.0.0.1:18765"
-    api_key_env: str = "VOLITION_DESKTOP_API_KEY"
+    api_key_env: str = "PAIMON_DESKTOP_API_KEY"
 
     @field_validator("backend")
     @classmethod
@@ -89,7 +89,7 @@ class Config(StrictModel):
                 config = cls.model_validate(tomllib.load(stream))
         except (OSError, ValueError, ValidationError) as exc:
             # Pydantic errors can include input values, including accidental secrets.
-            raise VolitionError(f"配置无法读取或校验失败：{path}（{type(exc).__name__}）") from exc
+            raise PaimonError(f"配置无法读取或校验失败：{path}（{type(exc).__name__}）") from exc
         base = path.resolve().parent
         config.runtime.state_dir = str(resolve(base, config.runtime.state_dir))
         config.desktop.workspace_dir = str(resolve(base, config.desktop.workspace_dir))
@@ -98,7 +98,7 @@ class Config(StrictModel):
         if config.model.script_path:
             config.model.script_path = str(resolve(base, config.model.script_path))
         if config.learning.enabled:
-            raise VolitionError("参数训练尚未接入，请保持 learning.enabled = false。")
+            raise PaimonError("参数训练尚未接入，请保持 learning.enabled = false。")
         return config
 
 

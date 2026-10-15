@@ -5,10 +5,10 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 
-from volition.contracts import VolitionError
-from volition.environment import Environment
-from volition.model import Model, ModelError
-from volition.store import Store
+from paimon.contracts import PaimonError
+from paimon.environment import Environment
+from paimon.model import Model, ModelError
+from paimon.store import Store
 
 
 @contextmanager
@@ -18,7 +18,7 @@ def runner_lock(directory: Path):
         try:
             fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
-            raise VolitionError("已有运行进程使用这个状态目录。") from exc
+            raise PaimonError("已有运行进程使用这个状态目录。") from exc
         try:
             yield
         finally:
@@ -63,7 +63,7 @@ class Runtime:
             result = None
             if decision.kind == "act":
                 if decision.action.name not in observation.capabilities:
-                    raise VolitionError("模型选择了当前环境未提供的动作。")
+                    raise PaimonError("模型选择了当前环境未提供的动作。")
                 self.store.stage(
                     operation_id,
                     "executing",
@@ -80,7 +80,7 @@ class Runtime:
             if exc.raw is not None:
                 self.store.event("model.invalid_output", {"raw": exc.raw}, operation_id)
             self.store.fail(operation_id, str(exc))
-        except VolitionError as exc:
+        except PaimonError as exc:
             self.store.fail(operation_id, str(exc))
         except Exception as exc:
             # Do not serialize arbitrary exception strings, URLs or authorization values.

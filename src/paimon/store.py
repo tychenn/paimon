@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-from volition.contracts import Decision, GoalChange, VolitionError
+from paimon.contracts import Decision, GoalChange, PaimonError
 
 
 def now() -> str:
@@ -24,14 +24,14 @@ class Store:
     def __init__(self, directory: Path):
         self.directory = directory
         directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-        self.db = sqlite3.connect(directory / "volition.sqlite3", timeout=10, isolation_level=None)
+        self.db = sqlite3.connect(directory / "paimon.sqlite3", timeout=10, isolation_level=None)
         self.db.row_factory = sqlite3.Row
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.execute("PRAGMA foreign_keys=ON")
         version = self.db.execute("PRAGMA user_version").fetchone()[0]
         if version not in (0, 1):
             self.db.close()
-            raise VolitionError(f"数据库版本 {version} 超出此版本支持范围。")
+            raise PaimonError(f"数据库版本 {version} 超出此版本支持范围。")
         self.db.executescript(
             """
             CREATE TABLE IF NOT EXISTS state (
@@ -71,7 +71,7 @@ class Store:
                 ),
             ),
         )
-        (directory / "volition.sqlite3").chmod(0o600)
+        (directory / "paimon.sqlite3").chmod(0o600)
         self.sync_goal_document()
 
     def close(self):
@@ -124,7 +124,7 @@ class Store:
 
     def sync_goal_document(self):
         """Readable derived file; SQLite and its event log remain authoritative."""
-        lines = ["# Volition 长期目标", "", "由经历数据库生成；使用 goals 命令或模型决策更新。", ""]
+        lines = ["# Paimon 长期目标", "", "由经历数据库生成；使用 goals 命令或模型决策更新。", ""]
         for goal in self.goals():
             lines.extend(
                 [
@@ -170,7 +170,7 @@ class Store:
             and change.id
             and not self.db.execute("SELECT 1 FROM goals WHERE id=?", (change.id,)).fetchone()
         ):
-            raise VolitionError("目标不存在；新目标应使用空 id。")
+            raise PaimonError("目标不存在；新目标应使用空 id。")
 
     def add_goal(self, title: str, reason: str = "用户提出") -> str:
         change = GoalChange(title=title, reason=reason)
@@ -183,7 +183,7 @@ class Store:
         with self.transaction():
             state = self.state()
             if state["phase"] != "RUNNING" or state["active_operation"]:
-                raise VolitionError("当前状态不能开始新的自主活动。")
+                raise PaimonError("当前状态不能开始新的自主活动。")
             operation_id = str(uuid4())
             self.db.execute(
                 "INSERT INTO operations VALUES (?, 'observing', 'started', ?, NULL)",
@@ -198,7 +198,7 @@ class Store:
         with self.transaction():
             state = self.state()
             if state["active_operation"] != operation_id or state["phase"] != "RUNNING":
-                raise VolitionError("运行状态已变化，停止本轮操作。")
+                raise PaimonError("运行状态已变化，停止本轮操作。")
             self.db.execute("UPDATE operations SET stage=? WHERE id=?", (stage, operation_id))
             self._event(kind, payload, operation_id)
 
@@ -206,7 +206,7 @@ class Store:
         with self.transaction():
             state = self.state()
             if state["active_operation"] != operation_id or state["phase"] != "RUNNING":
-                raise VolitionError("运行状态已变化，无法提交本轮结果。")
+                raise PaimonError("运行状态已变化，无法提交本轮结果。")
             if decision.goal:
                 self._goal(decision.goal, "model", operation_id)
             if decision.memory_note:
@@ -239,11 +239,11 @@ class Store:
 
     def reply(self, message_id: str, text: str) -> str:
         if not text.strip():
-            raise VolitionError("回复不能为空。")
+            raise PaimonError("回复不能为空。")
         with self.transaction():
             state = self.state()
             if state["phase"] != "AWAITING_FEEDBACK" or state["pending_message_id"] != message_id:
-                raise VolitionError("这条消息已回复，或与当前等待的消息不匹配。")
+                raise PaimonError("这条消息已回复，或与当前等待的消息不匹配。")
             feedback_id = str(uuid4())
             event_id = self._event(
                 "feedback.received",
@@ -261,7 +261,7 @@ class Store:
         with self.transaction():
             state = self.state()
             if state["phase"] != "PROCESSING_FEEDBACK":
-                raise VolitionError("当前没有待处理的反馈。")
+                raise PaimonError("当前没有待处理的反馈。")
             self._event(
                 "feedback.available",
                 {"id": state["feedback_id"], "meaning": "raw feedback added to context"},
@@ -300,7 +300,7 @@ class Store:
         with self.transaction():
             state = self.state()
             if state["phase"] != "PAUSED":
-                raise VolitionError("只有暂停状态可以恢复；等待反馈时必须先回复。")
+                raise PaimonError("只有暂停状态可以恢复；等待反馈时必须先回复。")
             if state["active_operation"]:
                 self.db.execute(
                     "UPDATE operations SET status='interrupted', finished_at=? WHERE id=?",

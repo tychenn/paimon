@@ -9,10 +9,10 @@ from typing import Protocol
 import httpx
 from pydantic import ValidationError
 
-from volition.config import ModelConfig
-from volition.contracts import Decision, ModelReply, VolitionError
+from paimon.config import ModelConfig
+from paimon.contracts import Decision, ModelReply, PaimonError
 
-SYSTEM_PROMPT = """你是 Volition，一个在独立环境中持续运行的自主 Agent。
+SYSTEM_PROMPT = """你是 Paimon，一个在独立环境中持续运行的自主 Agent。
 根据当前观察、经历和长期目标，选择下一步：act（行动）、speak（向用户发言）或 wait（暂时等待）。
 只使用 observation.capabilities 中提供的动作。environment kind=workspace 仅代表文件工作区，
 不代表 macOS 桌面。动作中的 target 是该环境提供的目标，text 是待写入内容。
@@ -29,7 +29,7 @@ class Model(Protocol):
     def decide(self, context: dict) -> ModelReply: ...
 
 
-class ModelError(VolitionError):
+class ModelError(PaimonError):
     def __init__(self, message: str, raw: str | None = None):
         super().__init__(message)
         self.raw = raw
@@ -38,7 +38,7 @@ class ModelError(VolitionError):
 class RemoteModel:
     def __init__(self, config: ModelConfig, client: httpx.Client | None = None):
         if not config.model_id:
-            raise VolitionError("请先在本地配置中填写 model.model_id。")
+            raise PaimonError("请先在本地配置中填写 model.model_id。")
         self.config = config
         self.owns_client = client is None
         self.client = client or httpx.Client(
@@ -83,7 +83,7 @@ class RemoteModel:
             "response_format": {
                 "type": "json_schema",
                 "json_schema": {
-                    "name": "volition_decision",
+                    "name": "paimon_decision",
                     "schema": Decision.model_json_schema(),
                 },
             },
@@ -139,7 +139,7 @@ class ScriptedModel:
                 Decision.model_validate(item) for item in json.loads(path.read_text())
             ]
         except (OSError, ValueError, TypeError) as exc:
-            raise VolitionError("离线演示脚本无法读取或校验失败。") from exc
+            raise PaimonError("离线演示脚本无法读取或校验失败。") from exc
 
     def decide(self, context: dict) -> ModelReply:
         index = context["decision_count"]

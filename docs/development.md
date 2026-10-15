@@ -40,7 +40,7 @@ stateDiagram-v2
 ./dev run ruff format --check .
 ./dev run pytest -q
 ./dev run python -m compileall -q src
-./dev run volition doctor --config configs/local.example.toml
+./dev run paimon doctor --config configs/local.example.toml
 ./dev build --no-sources
 ```
 

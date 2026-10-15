@@ -27,7 +27,7 @@ def main():
         "shards": shards,
         "weight_bytes": sum((directory / name).stat().st_size for name in shards),
     }
-    (directory / "volition-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    (directory / "paimon-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(json.dumps(manifest, indent=2))
 
 

@@ -102,7 +102,7 @@ def main():
         "verified_files": files,
         "source": "official ModelScope shards matched to pinned Hugging Face hashes",
     }
-    (args.directory / "volition-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    (args.directory / "paimon-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print("All model files verified.", flush=True)
 
 

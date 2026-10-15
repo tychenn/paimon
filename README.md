@@ -1,6 +1,6 @@
-# Volition
+# Paimon
 
-Volition 探索一个拥有独立桌面、持续状态、自主目标和学习能力的 Agent。
+Paimon 探索一个拥有独立桌面、持续状态、自主目标和学习能力的 Agent。
 
 当前实现了第一版运行内核：观测环境、调用模型选择行动/发言/等待、执行动作、保存经历。**主动发言后，所有新的自主活动持续暂停，直到收到对应回复；重启后仍然等待。**
 
@@ -23,11 +23,11 @@ Qwen3.8-27B 是首个部署目标。模型下载、服务启动和真实推理�
 需要 Python 3.12 和 [uv](https://docs.astral.sh/uv/getting-started/installation/)。
 
 ```sh
-git clone https://github.com/tychenn/volition.git
-cd volition
+git clone https://github.com/tychenn/paimon.git
+cd paimon
 uv python install 3.12
 uv sync --locked
-uv run volition demo
+uv run paimon demo
 ```
 
 演示会实际写下一条笔记，随后发言并等待输入。输入 `/exit` 或按 Ctrl+C 退出，等待状态保留。再次运行会继续等待同一条消息。使用新的 `--state-dir runtime/another-demo` 可建立另一段演示记录。
@@ -39,9 +39,9 @@ uv run volition demo
 ```sh
 cp configs/local.example.toml configs/local.toml
 # 按 docs/deployment.md 部署服务、建立 SSH 隧道并填写认证文件路径。
-uv run volition doctor --connect
-uv run volition init --goal "探索自己的环境，记录观察，并在有值得交流的内容时与我讨论。"
-uv run volition run
+uv run paimon doctor --connect
+uv run paimon init --goal "探索自己的环境，记录观察，并在有值得交流的内容时与我讨论。"
+uv run paimon run
 ```
 
 示例配置使用独立笔记工作区。接入虚拟机后，改用 `desktop.backend = "macos_vm"`，填写桥接身份和认证变量。路径统一相对于配置文件解析。
@@ -49,11 +49,11 @@ uv run volition run
 交互终端在 Agent 发言后接受普通文本回复；也可以在另一个终端操作：
 
 ```sh
-uv run volition status
-uv run volition reply "用户的原始回复" --to '<pending_message_id>'
-uv run volition history --limit 20
-uv run volition goals
-uv run volition export runtime/experiences.jsonl
+uv run paimon status
+uv run paimon reply "用户的原始回复" --to '<pending_message_id>'
+uv run paimon history --limit 20
+uv run paimon goals
+uv run paimon export runtime/experiences.jsonl
 ```
 
 `run --non-interactive` 用于独立进程，等待时只轮询回复状态。`step` 最多执行一轮。`run --max-steps 2` 限制推进次数，不能越过反馈等待。
@@ -63,8 +63,8 @@ uv run volition export runtime/experiences.jsonl
 模型错误、非法动作和执行异常会进入 `PAUSED`。若程序在动作过程中崩溃，重启后保留“结果未知”，请先检查虚拟机或文件结果，再使用：
 
 ```sh
-uv run volition resume --note "已检查上次动作结果，允许重新观察。"
-uv run volition run
+uv run paimon resume --note "已检查上次动作结果，允许重新观察。"
+uv run paimon run
 ```
 
 恢复后重新观察环境，旧动作不会自动重放。`resume` 无法跳过等待用户回复的状态。
@@ -77,7 +77,7 @@ uv run volition run
 | 本地 macOS 虚拟机 | 自己的应用、文件、结构化控件观测与操作 |
 | 远程 GPU 服务器 | 模型推理；后续加入真实参数更新 |
 
-默认记录在 `runtime/live/volition.sqlite3`，目标文档在 `runtime/live/long_term_goals.md`。目标文档由数据库生成，更新目标请使用命令或模型决策。原始反馈完整保存；送入模型的历史有长度限制。
+默认记录在 `runtime/live/paimon.sqlite3`，目标文档在 `runtime/live/long_term_goals.md`。目标文档由数据库生成，更新目标请使用命令或模型决策。原始反馈完整保存；送入模型的历史有长度限制。
 
 个人配置、密钥、经历、截图、权重、虚拟机磁盘均被 Git 忽略。配置不会自动加载 `.env`。模型密钥可使用环境变量或仅当前用户可读的文件。
 

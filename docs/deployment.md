@@ -13,13 +13,13 @@
 以下均在用户获准使用的远程环境执行。不要改动其他项目的 Python 环境或占用已有工作负载的 GPU。
 
 ```sh
-mkdir -p ~/volition
-python3.12 -m venv ~/volition/.venv-inference
-~/volition/.venv-inference/bin/python -m pip install uv
-~/volition/.venv-inference/bin/uv pip install \
-  --python ~/volition/.venv-inference/bin/python 'vllm==0.31.0'
-source ~/volition/.venv-inference/bin/activate
-python scripts/download_model.py --directory ~/volition/models/Qwen3.8-27B
+mkdir -p ~/paimon
+python3.12 -m venv ~/paimon/.venv-inference
+~/paimon/.venv-inference/bin/python -m pip install uv
+~/paimon/.venv-inference/bin/uv pip install \
+  --python ~/paimon/.venv-inference/bin/python 'vllm==0.31.0'
+source ~/paimon/.venv-inference/bin/activate
+python scripts/download_model.py --directory ~/paimon/models/Qwen3.8-27B
 ```
 
 受网络限制时可使用 `scripts/download_verified_mirror.py`：它只接受固定版本的官方 Hugging Face 文件清单，并将官方 ModelScope 权重的大小和 SHA-256 与其比对，下载后再次校验。配置、模板和 tokenizer 仍从固定的 Hugging Face 版本获取。两个 API 清单分别来自：
@@ -27,7 +27,7 @@ python scripts/download_model.py --directory ~/volition/models/Qwen3.8-27B
 - `https://huggingface.co/api/models/Qwen/Qwen3.8-27B/revision/<上述版本>?blobs=true`
 - `https://modelscope.cn/api/v1/models/Qwen/Qwen3.8-27B/repo/files?Revision=master&Recursive=true`
 
-请保留下载清单和最终的 `volition-manifest.json`。
+请保留下载清单和最终的 `paimon-manifest.json`。
 
 ## 启动和认证
 
@@ -35,14 +35,14 @@ python scripts/download_model.py --directory ~/volition/models/Qwen3.8-27B
 
 ```sh
 export CUDA_VISIBLE_DEVICES=0,1
-export VOLITION_MODEL_DIR="$HOME/volition/models/Qwen3.8-27B"
-export VOLITION_MODEL_KEY_FILE="$HOME/volition/runtime/model-api.key"
+export PAIMON_MODEL_DIR="$HOME/paimon/models/Qwen3.8-27B"
+export PAIMON_MODEL_KEY_FILE="$HOME/paimon/runtime/model-api.key"
 bash scripts/serve_model.sh
 ```
 
-脚本默认监听节点回环地址。推荐 SSH 转发到该节点的回环端口；如果从登录节点转发到计算节点的私网端口，需显式指定 `VOLITION_BIND_HOST` 为计算节点地址，继续保留 API 认证。
+脚本默认监听节点回环地址。推荐 SSH 转发到该节点的回环端口；如果从登录节点转发到计算节点的私网端口，需显式指定 `PAIMON_BIND_HOST` 为计算节点地址，继续保留 API 认证。
 
-本地配置的 `model.base_url` 指向 SSH 隧道，例如 `http://127.0.0.1:18000/v1`，`model.model_id = "volition-base"`。将本地认证文件路径填入 `api_key_file`。`doctor --connect` 检查服务列表和模型 ID，随后用 `step` 验证真正的推理调用。
+本地配置的 `model.base_url` 指向 SSH 隧道，例如 `http://127.0.0.1:18000/v1`，`model.model_id = "paimon-base"`。将本地认证文件路径填入 `api_key_file`。`doctor --connect` 检查服务列表和模型 ID，随后用 `step` 验证真正的推理调用。
 
 默认集成配置为 `enable_thinking = false`、最大输出 2048 token，便于先检查结构化决策链路。评估需要深度推理的行为时可启用 thinking，并增加输出预算与超时；此配置选择不代表对模型能力的评价。服务启用 `qwen3` reasoning parser，避免把 thinking 内容混入决策 JSON。
 

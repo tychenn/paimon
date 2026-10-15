@@ -2,11 +2,11 @@ import json
 
 import pytest
 
-from volition.contracts import Action, Decision, GoalChange, ModelReply, VolitionError
-from volition.environment import WorkspaceEnvironment
-from volition.model import ModelError
-from volition.runtime import Runtime, runner_lock
-from volition.store import Store
+from paimon.contracts import Action, Decision, GoalChange, ModelReply, PaimonError
+from paimon.environment import WorkspaceEnvironment
+from paimon.model import ModelError
+from paimon.runtime import Runtime, runner_lock
+from paimon.store import Store
 
 
 class CountingModel:
@@ -68,13 +68,13 @@ def test_speech_survives_restart_and_blocks_all_activity(tmp_path, environment):
             assert model.calls == environment.observations == 1
             assert environment.actions == 0
             assert len(restored.events(100)) == event_count
-            with pytest.raises(VolitionError):
+            with pytest.raises(PaimonError):
                 restored.resume("不能绕过反馈")
-            with pytest.raises(VolitionError):
+            with pytest.raises(PaimonError):
                 restored.reply("stale-message", "yes")
             reply = "  我有不同意见。\n请先说明理由。  "
             feedback_id = restored.reply(pending, reply)
-            with pytest.raises(VolitionError):
+            with pytest.raises(PaimonError):
                 restored.reply(pending, "duplicate")
             assert runtime.step()["phase"] == "RUNNING"
             assert restored.message(feedback_id)["content"] == reply
@@ -180,13 +180,13 @@ def test_context_is_bounded_and_keeps_old_memory_and_feedback(store, environment
 
 def test_runner_lock_excludes_second_runner(tmp_path):
     with runner_lock(tmp_path):
-        with pytest.raises(VolitionError), runner_lock(tmp_path):
+        with pytest.raises(PaimonError), runner_lock(tmp_path):
             pytest.fail("second runner entered")
 
 
 @pytest.mark.parametrize("target", ["../outside.md", "/tmp/outside.md", ".hidden.md", "x.py"])
 def test_workspace_rejects_escape_and_unsupported_files(environment, target):
-    with pytest.raises(VolitionError):
+    with pytest.raises(PaimonError):
         environment.execute(
             Action(name="write_note", target=target, text="unsafe"), environment.observe(), "test"
         )
@@ -197,7 +197,7 @@ def test_workspace_rejects_symlink(environment, tmp_path):
     outside.write_text("keep")
     (environment.directory / "link.md").symlink_to(outside)
     for name in ("write_note", "read_note"):
-        with pytest.raises(VolitionError):
+        with pytest.raises(PaimonError):
             environment.execute(
                 Action(name=name, target="link.md", text="change"), environment.observe(), "test"
             )

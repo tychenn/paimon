@@ -2,9 +2,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from volition.contracts import Action, VolitionError
-from volition.guest import ActionRequest, GuestService
-from volition.guest_macos import require_virtual_mac
+from paimon.contracts import Action, PaimonError
+from paimon.guest import ActionRequest, GuestService
+from paimon.guest_macos import require_virtual_mac
 
 
 class Adapter:
@@ -16,7 +16,7 @@ class Adapter:
     def validate(self, request):
         self.validations += 1
         if request.observation_id != "frame-1":
-            raise VolitionError("stale")
+            raise PaimonError("stale")
 
     def execute(self, request):
         self.executions += 1
@@ -46,7 +46,7 @@ def test_guest_deduplicates_action_across_restart(tmp_path):
     try:
         assert service.execute(request()) == first
         assert adapter.executions == 1
-        with pytest.raises(VolitionError):
+        with pytest.raises(PaimonError):
             service.execute(request(action=Action(name="click", target="2")))
         assert adapter.executions == 1
     finally:
@@ -62,7 +62,7 @@ def test_guest_ambiguous_action_persists_and_is_not_replayed(tmp_path):
     service.close()
     service = GuestService(adapter, tmp_path)
     try:
-        with pytest.raises(VolitionError, match="未知"):
+        with pytest.raises(PaimonError, match="未知"):
             service.execute(request())
         assert adapter.executions == 1
     finally:
@@ -80,7 +80,7 @@ def test_guest_rejects_stale_or_foreign_request(tmp_path, changes):
     adapter = Adapter()
     service = GuestService(adapter, tmp_path)
     try:
-        with pytest.raises(VolitionError):
+        with pytest.raises(PaimonError):
             service.execute(request(**changes))
         assert adapter.executions == 0
         assert service.db.execute("SELECT count(*) FROM actions").fetchone()[0] == 0
@@ -89,18 +89,18 @@ def test_guest_rejects_stale_or_foreign_request(tmp_path, changes):
 
 
 def test_host_guard_runs_without_accessing_desktop(monkeypatch):
-    monkeypatch.setattr("volition.guest_macos.platform.system", lambda: "Darwin")
-    monkeypatch.setattr("volition.guest_macos.subprocess.check_output", lambda *a, **kw: "Mac16,13")
-    with pytest.raises(VolitionError, match="宿主"):
+    monkeypatch.setattr("paimon.guest_macos.platform.system", lambda: "Darwin")
+    monkeypatch.setattr("paimon.guest_macos.subprocess.check_output", lambda *a, **kw: "Mac16,13")
+    with pytest.raises(PaimonError, match="宿主"):
         require_virtual_mac()
 
 
 def test_native_adapter_rejects_stale_frame_and_app_switch():
-    from volition.guest_macos import MacOSAdapter
+    from paimon.guest_macos import MacOSAdapter
 
     adapter = object.__new__(MacOSAdapter)
     adapter.snapshot_id = "other-frame"
-    with pytest.raises(VolitionError, match="过期"):
+    with pytest.raises(PaimonError, match="过期"):
         adapter.validate(request())
     adapter.snapshot_id = "frame-1"
     adapter.observed_at = __import__("time").monotonic()
@@ -111,7 +111,7 @@ def test_native_adapter_rejects_stale_frame_and_app_switch():
             sharedWorkspace=lambda: SimpleNamespace(frontmostApplication=lambda: app)
         )
     )
-    with pytest.raises(VolitionError, match="前台应用"):
+    with pytest.raises(PaimonError, match="前台应用"):
         adapter.validate(request())
 
 
@@ -121,9 +121,9 @@ def test_http_bridge_requires_auth_and_matches_client_contract(tmp_path):
 
     import httpx
 
-    from volition.config import DesktopConfig
-    from volition.environment import MacOSBridge
-    from volition.guest import LoopbackHTTPServer, handler_for
+    from paimon.config import DesktopConfig
+    from paimon.environment import MacOSBridge
+    from paimon.guest import LoopbackHTTPServer, handler_for
 
     servers = Queue()
     adapter = Adapter()

@@ -11,8 +11,8 @@ from socketserver import TCPServer
 
 from pydantic import Field
 
-from volition.contracts import Action, StrictModel, VolitionError
-from volition.runtime import runner_lock
+from paimon.contracts import Action, PaimonError, StrictModel
+from paimon.runtime import runner_lock
 
 
 class LoopbackHTTPServer(HTTPServer):
@@ -51,16 +51,16 @@ class GuestService:
 
     def execute(self, request: ActionRequest):
         if request.environment_id != self.adapter.environment_id:
-            raise VolitionError("环境身份不匹配。")
+            raise PaimonError("环境身份不匹配。")
         fingerprint = hashlib.sha256(request.model_dump_json().encode()).hexdigest()
         row = self.db.execute(
             "SELECT fingerprint, result FROM actions WHERE id=?", (request.operation_id,)
         ).fetchone()
         if row:
             if row[0] != fingerprint:
-                raise VolitionError("同一操作 ID 的请求内容已改变。")
+                raise PaimonError("同一操作 ID 的请求内容已改变。")
             if row[1] is None:
-                raise VolitionError("此前操作结果未知；拒绝再次执行。")
+                raise PaimonError("此前操作结果未知；拒绝再次执行。")
             return json.loads(row[1])
         self.adapter.validate(request)
         # Commit the intent BEFORE interacting with the desktop. A crash leaves an
@@ -131,7 +131,7 @@ def handler_for(service: GuestService, key: str):
                 return
             try:
                 self.send_json(200, service.execute(request))
-            except VolitionError as exc:
+            except PaimonError as exc:
                 self.send_json(409, {"error": str(exc)})
             except Exception as exc:
                 self.send_json(500, {"error": type(exc).__name__, "outcome": "unknown"})
@@ -147,13 +147,13 @@ def main():
     parser.add_argument("--port", type=int, default=18765)
     args = parser.parse_args()
     # This guard executes before importing native desktop APIs or reading credentials.
-    from volition.guest_macos import MacOSAdapter, require_virtual_mac
+    from paimon.guest_macos import MacOSAdapter, require_virtual_mac
 
     try:
         require_virtual_mac()
         key = args.key_file.read_text().strip()
         if len(key) < 32 or args.key_file.stat().st_mode & 0o077:
-            raise VolitionError("桥接密钥文件应至少包含 32 字符，且仅当前用户可读写。")
+            raise PaimonError("桥接密钥文件应至少包含 32 字符，且仅当前用户可读写。")
         with runner_lock(args.state_dir):
             service = GuestService(MacOSAdapter(args.environment_id), args.state_dir)
             try:
@@ -172,7 +172,7 @@ def main():
                     server.serve_forever()
             finally:
                 service.close()
-    except (VolitionError, OSError, ImportError) as exc:
+    except (PaimonError, OSError, ImportError) as exc:
         print(f"Guest bridge 未启动：{type(exc).__name__}: {exc}")
         return 2
     except KeyboardInterrupt:

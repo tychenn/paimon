@@ -3,17 +3,17 @@ import os
 import subprocess
 import sys
 
-from volition.store import Store
+from paimon.store import Store
 
 
 def invoke(*args):
     # Exercise the actual console entry function in a fresh process.
     return subprocess.run(
-        [sys.executable, "-c", "from volition.cli import main; raise SystemExit(main())", *args],
+        [sys.executable, "-c", "from paimon.cli import main; raise SystemExit(main())", *args],
         capture_output=True,
         text=True,
         timeout=15,
-        env={**os.environ, "VOLITION_MODEL_API_KEY": ""},
+        env={**os.environ, "PAIMON_MODEL_API_KEY": ""},
     )
 
 

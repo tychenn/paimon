@@ -29,7 +29,7 @@ jobs:
           uv run ruff format --check .
           uv run python -m compileall -q src
       - name: Check development environment
-        run: uv run volition doctor --config configs/local.example.toml
+        run: uv run paimon doctor --config configs/local.example.toml
       - name: Test runtime, recovery and model contracts
         run: uv run pytest -q
       - name: Build package

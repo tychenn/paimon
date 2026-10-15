@@ -8,8 +8,8 @@ from uuid import uuid4
 
 import httpx
 
-from volition.config import DesktopConfig
-from volition.contracts import Action, Observation, VolitionError
+from paimon.config import DesktopConfig
+from paimon.contracts import Action, Observation, PaimonError
 
 
 class Environment(Protocol):
@@ -32,7 +32,7 @@ class WorkspaceEnvironment:
             or path.suffix not in {".md", ".txt"}
             or path.is_symlink()
         ):
-            raise VolitionError("笔记文件必须是工作区内的单层 .md 或 .txt 文件，不能是符号链接。")
+            raise PaimonError("笔记文件必须是工作区内的单层 .md 或 .txt 文件，不能是符号链接。")
         return path
 
     def observe(self) -> Observation:
@@ -54,7 +54,7 @@ class WorkspaceEnvironment:
 
     def execute(self, action: Action, observation: Observation, operation_id: str) -> dict:
         if observation.environment_id != self.environment_id:
-            raise VolitionError("观察来自另一个环境。")
+            raise PaimonError("观察来自另一个环境。")
         path = self.target(action.target)
         if action.name == "read_note":
             # O_NOFOLLOW also closes the symlink swap window between validation and opening.
@@ -63,7 +63,7 @@ class WorkspaceEnvironment:
                 content = stream.read(20001)
             return {"name": path.name, "text": content[:20000], "truncated": len(content) > 20000}
         if action.name != "write_note":
-            raise VolitionError("此环境不支持该动作。")
+            raise PaimonError("此环境不支持该动作。")
         temporary = self.directory / f".{operation_id}.tmp"
         try:
             with temporary.open("x", encoding="utf-8") as stream:
@@ -97,7 +97,7 @@ class MacOSBridge:
     def headers(self) -> dict:
         key = os.environ.get(self.config.api_key_env)
         if not key:
-            raise VolitionError("请先设置虚拟机桥接服务的认证环境变量。")
+            raise PaimonError("请先设置虚拟机桥接服务的认证环境变量。")
         return {"Authorization": f"Bearer {key}"}
 
     def observe(self) -> Observation:
@@ -108,17 +108,17 @@ class MacOSBridge:
             response.raise_for_status()
             observation = Observation.model_validate(response.json())
         except (httpx.HTTPError, ValueError) as exc:
-            raise VolitionError("虚拟机观察失败；请确认 guest bridge 已启动。") from exc
+            raise PaimonError("虚拟机观察失败；请确认 guest bridge 已启动。") from exc
         if (
             observation.kind != "macos_vm"
             or observation.environment_id != self.config.environment_id
         ):
-            raise VolitionError("虚拟机环境身份不匹配，已停止操作。")
+            raise PaimonError("虚拟机环境身份不匹配，已停止操作。")
         return observation
 
     def execute(self, action: Action, observation: Observation, operation_id: str) -> dict:
         if observation.environment_id != self.config.environment_id:
-            raise VolitionError("动作与观察的环境身份不匹配。")
+            raise PaimonError("动作与观察的环境身份不匹配。")
         try:
             response = self.client.post(
                 self.config.bridge_url + "/v1/actions",
@@ -133,7 +133,7 @@ class MacOSBridge:
             response.raise_for_status()
             result = response.json()
             if result.get("operation_id") != operation_id or result.get("status") != "completed":
-                raise VolitionError("动作结果未确认；不会自动重放。")
+                raise PaimonError("动作结果未确认；不会自动重放。")
             return result
         except (httpx.HTTPError, ValueError, AttributeError) as exc:
-            raise VolitionError("桌面动作结果未知；请检查虚拟机，恢复前不会自动重放。") from exc
+            raise PaimonError("桌面动作结果未知；请检查虚拟机，恢复前不会自动重放。") from exc

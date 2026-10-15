@@ -1,4 +1,4 @@
-"""Run Volition and inspect its persistent experiences."""
+"""Run Paimon and inspect its persistent experiences."""
 
 import argparse
 import json
@@ -9,12 +9,12 @@ from contextlib import ExitStack
 from importlib.metadata import version
 from pathlib import Path
 
-from volition.config import Config, DesktopConfig, ModelConfig, RuntimeConfig
-from volition.contracts import VolitionError
-from volition.environment import MacOSBridge, WorkspaceEnvironment
-from volition.model import RemoteModel, ScriptedModel
-from volition.runtime import Runtime, runner_lock
-from volition.store import Store
+from paimon.config import Config, DesktopConfig, ModelConfig, RuntimeConfig
+from paimon.contracts import PaimonError
+from paimon.environment import MacOSBridge, WorkspaceEnvironment
+from paimon.model import RemoteModel, ScriptedModel
+from paimon.runtime import Runtime, runner_lock
+from paimon.store import Store
 
 
 def output(value):
@@ -22,8 +22,8 @@ def output(value):
 
 
 def parser():
-    root = argparse.ArgumentParser(prog="volition", description=__doc__)
-    root.add_argument("--version", action="version", version=version("volition"))
+    root = argparse.ArgumentParser(prog="paimon", description=__doc__)
+    root.add_argument("--version", action="version", version=version("paimon"))
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--config", type=Path, default=Path("configs/local.toml"))
     common.add_argument("--state-dir", type=Path)
@@ -69,7 +69,7 @@ def configuration(args):
                 backend="scripted", script_path=str(Path(__file__).with_name("demo.json"))
             ),
             desktop=DesktopConfig(
-                workspace_dir=str(directory / "workspace"), environment_id="volition-offline-demo"
+                workspace_dir=str(directory / "workspace"), environment_id="paimon-offline-demo"
             ),
         )
     config = Config.load(args.config)
@@ -81,14 +81,14 @@ def configuration(args):
 def doctor(args):
     report = {
         "stage": "runtime_core",
-        "version": version("volition"),
+        "version": version("paimon"),
         "python": platform.python_version(),
         "platform": platform.system(),
         "parameter_training": "not_implemented",
     }
     if not args.config.exists():
         if args.connect:
-            raise VolitionError("请先创建 configs/local.toml。")
+            raise PaimonError("请先创建 configs/local.toml。")
         report["config"] = "not_found; copy configs/local.example.toml to configs/local.toml"
     else:
         config = configuration(args)
@@ -100,7 +100,7 @@ def doctor(args):
         )
         if args.connect:
             if config.model.backend != "remote":
-                raise VolitionError("当前是离线演示配置，没有远程模型服务。")
+                raise PaimonError("当前是离线演示配置，没有远程模型服务。")
             model = RemoteModel(config.model)
             try:
                 report["model_service"] = model.probe()
@@ -115,7 +115,7 @@ def doctor(args):
 def run_loop(runtime, config, args):
     store = runtime.store
     steps, announced = 0, None
-    print("Volition 已启动。Ctrl+C 停止，经历和等待状态会保留。", flush=True)
+    print("Paimon 已启动。Ctrl+C 停止，经历和等待状态会保留。", flush=True)
     if config.model.backend == "scripted":
         print("当前是固定脚本的离线演示，没有调用神经模型或 macOS 桌面。", flush=True)
     while not args.max_steps or steps < args.max_steps:
@@ -126,7 +126,7 @@ def run_loop(runtime, config, args):
         if state["phase"] == "AWAITING_FEEDBACK":
             message = store.message(state["pending_message_id"])
             if announced != message["id"]:
-                print("\nVolition：" + message["content"], flush=True)
+                print("\nPaimon：" + message["content"], flush=True)
                 announced = message["id"]
             if args.non_interactive:
                 time.sleep(config.runtime.tick_seconds)
@@ -140,7 +140,7 @@ def run_loop(runtime, config, args):
             if text.strip():
                 try:
                     store.reply(message["id"], text)
-                except VolitionError as exc:
+                except PaimonError as exc:
                     print(str(exc), flush=True)
             continue
         if time.time() < state["next_tick_at"]:
@@ -154,7 +154,7 @@ def run_loop(runtime, config, args):
             time.sleep(config.runtime.tick_seconds)
     state = store.state()
     if state["phase"] == "AWAITING_FEEDBACK":
-        print("\nVolition：" + store.message(state["pending_message_id"])["content"], flush=True)
+        print("\nPaimon：" + store.message(state["pending_message_id"])["content"], flush=True)
     output({"phase": state["phase"], "steps": steps})
     return 2 if state["phase"] == "PAUSED" else 0
 
@@ -165,7 +165,7 @@ def main():
         if args.command == "doctor":
             return doctor(args)
         if getattr(args, "max_steps", 0) < 0 or getattr(args, "limit", 1) < 1:
-            raise VolitionError("步数应大于等于零，记录数量应大于零。")
+            raise PaimonError("步数应大于等于零，记录数量应大于零。")
         config = configuration(args)
         with ExitStack() as stack:
             store = Store(Path(config.runtime.state_dir))
@@ -226,7 +226,7 @@ def main():
                     return 2 if state["phase"] == "PAUSED" else 0
                 return run_loop(runtime, config, args)
         return 0
-    except VolitionError as exc:
+    except PaimonError as exc:
         print(str(exc), file=sys.stderr)
         return 2
     except OSError as exc:

@@ -9,29 +9,29 @@
 ## 在虚拟机内安装
 
 ```sh
-git clone https://github.com/tychenn/volition.git
-cd volition
+git clone https://github.com/tychenn/paimon.git
+cd paimon
 uv sync --locked --extra guest
 ```
 
 创建随机 bridge key 文件并设为权限 `600`。在虚拟机的“系统设置 → 隐私与安全性 → 辅助功能”中，为运行服务的终端授予权限，再启动：
 
 ```sh
-uv run --extra guest volition-guest \
-  --environment-id volition-macos-vm \
+uv run --extra guest paimon-guest \
+  --environment-id paimon-macos-vm \
   --key-file /absolute/path/to/guest-api.key
 ```
 
 服务先检查 `hw.model` 是否为 `VirtualMac`，通过后才加载桌面接口。在宿主上运行会拒绝启动。此检查用于防止部署位置出错；身份仍应结合实际虚拟机和 SSH 连接检查。
 
-服务仅监听虚拟机内部 `127.0.0.1:18765`。通过用户授权的 SSH 转发连接，宿主端设置 `VOLITION_DESKTOP_API_KEY`，配置：
+服务仅监听虚拟机内部 `127.0.0.1:18765`。通过用户授权的 SSH 转发连接，宿主端设置 `PAIMON_DESKTOP_API_KEY`，配置：
 
 ```toml
 [desktop]
 backend = "macos_vm"
-environment_id = "volition-macos-vm"
+environment_id = "paimon-macos-vm"
 bridge_url = "http://127.0.0.1:18765"
-api_key_env = "VOLITION_DESKTOP_API_KEY"
+api_key_env = "PAIMON_DESKTOP_API_KEY"
 ```
 
 ## 当前原生动作

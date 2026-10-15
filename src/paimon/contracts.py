@@ -61,5 +61,5 @@ class ModelReply(StrictModel):
     usage: dict[str, Any] = Field(default_factory=dict)
 
 
-class VolitionError(Exception):
+class PaimonError(Exception):
     """An expected, user-readable failure."""

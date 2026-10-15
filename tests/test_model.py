@@ -3,10 +3,10 @@ import json
 import httpx
 import pytest
 
-from volition.config import Config, DesktopConfig, ModelConfig
-from volition.contracts import Action, Observation, VolitionError
-from volition.environment import MacOSBridge
-from volition.model import ModelError, RemoteModel
+from paimon.config import Config, DesktopConfig, ModelConfig
+from paimon.contracts import Action, Observation, PaimonError
+from paimon.environment import MacOSBridge
+from paimon.model import ModelError, RemoteModel
 
 
 def response(content='{"kind":"wait"}', finish="stop"):
@@ -22,8 +22,8 @@ def response(content='{"kind":"wait"}', finish="stop"):
 
 def test_structured_request_and_transient_retry(monkeypatch):
     requests = []
-    monkeypatch.setattr("volition.model.time.sleep", lambda _: None)
-    monkeypatch.setenv("VOLITION_MODEL_API_KEY", "fake-test-token")
+    monkeypatch.setattr("paimon.model.time.sleep", lambda _: None)
+    monkeypatch.setenv("PAIMON_MODEL_API_KEY", "fake-test-token")
 
     def handle(request):
         requests.append(request)
@@ -77,25 +77,25 @@ def test_config_paths_and_validation_do_not_expose_input(tmp_path):
     assert config.runtime.state_dir == str(tmp_path / "state")
     assert config.model.api_key_file == str(tmp_path / "key")
     path.write_text('[model]\nbase_url = "https://user:secret@example.com"\n')
-    with pytest.raises(VolitionError) as error:
+    with pytest.raises(PaimonError) as error:
         Config.load(path)
     assert "secret" not in str(error.value)
 
 
 def test_bridge_rejects_wrong_environment(monkeypatch):
-    monkeypatch.setenv("VOLITION_DESKTOP_API_KEY", "fake-test-token")
+    monkeypatch.setenv("PAIMON_DESKTOP_API_KEY", "fake-test-token")
     observation = Observation(
         id="frame", kind="macos_vm", environment_id="wrong-vm", capabilities=["click"], content={}
     )
     with httpx.Client(
         transport=httpx.MockTransport(lambda _: httpx.Response(200, json=observation.model_dump()))
     ) as client:
-        with pytest.raises(VolitionError, match="身份不匹配"):
+        with pytest.raises(PaimonError, match="身份不匹配"):
             MacOSBridge(DesktopConfig(environment_id="expected-vm"), client).observe()
 
 
 def test_bridge_never_retries_uncertain_action(monkeypatch):
-    monkeypatch.setenv("VOLITION_DESKTOP_API_KEY", "fake-test-token")
+    monkeypatch.setenv("PAIMON_DESKTOP_API_KEY", "fake-test-token")
     requests = []
 
     def handle(request):
@@ -107,7 +107,7 @@ def test_bridge_never_retries_uncertain_action(monkeypatch):
     )
     with httpx.Client(transport=httpx.MockTransport(handle)) as client:
         bridge = MacOSBridge(DesktopConfig(environment_id="test-vm"), client)
-        with pytest.raises(VolitionError, match="结果未知"):
+        with pytest.raises(PaimonError, match="结果未知"):
             bridge.execute(Action(name="click", target="button-1"), observation, "operation-1")
     assert len(requests) == 1
     assert json.loads(requests[0].content)["observation_id"] == "frame"
