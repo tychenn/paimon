@@ -1,0 +1,18 @@
+[
+  {
+    "kind": "act",
+    "rationale": "演示一次真实的工作区文件写入。",
+    "action": {"name": "write_note", "target": "first-note.md", "text": "# 第一次经历\n\n这是一条离线脚本生成的演示笔记。\n"},
+    "goal": {"title": "验证等待反馈和重启恢复", "reason": "离线演示目标"}
+  },
+  {
+    "kind": "speak",
+    "message": "我已写下一条演示笔记。你希望下一步探索什么？我会在这里等待你的回复。",
+    "rationale": "演示主动发言后暂停。"
+  },
+  {
+    "kind": "wait",
+    "rationale": "离线演示到此结束，真实回复原文已进入经历记录。",
+    "wait_seconds": 600
+  }
+]
